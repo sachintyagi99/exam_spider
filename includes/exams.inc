@@ -336,12 +336,6 @@ function exam_spider_exam_start_submit(&$form, &$form_state) {
 
 }
 
-function exam_spider_clock($formid) {
-  require_once(drupal_get_path('module', 'exam_spider') . '/includes/ExamSpiderDigitalClock.php');
-  $clock = new exam_spider_digital_clock();
-  return $clock->_show_clock($formid);
-}
-
 function exam_spider_exam_continue($form, &$form_state, $exam_id) {
   $output = '';
   $form['#prefix'] = '<div id="exam_timer"></div>';
@@ -362,20 +356,20 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
     $form['li_prefix'] = array(
       '#markup' => '<ul class="exam-slider">',
     );
-    foreach ($results as $key => $value) {
+    foreach ($results as $value) {
       $options[1] = $value->opt1;
       $options[2] = $value->opt2;
       $options[3] = $value->opt3;
       $options[4] = $value->opt4;
       if ($value->multiple == 1) {
-        $form['question'][$key] = array(
+        $form['question'][$value->id] = array(
           '#type'    => 'checkboxes',
           '#options' => drupal_map_assoc($options),
           '#title'   => t($value->question),
         );
       }
       else {
-        $form['question'][$key] = array(
+        $form['question'][$value->id] = array(
           '#type'    => 'radios',
           '#title'   => t($value->question),
           '#options' => $options,
@@ -401,6 +395,13 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
 
 function exam_spider_exam_continue_submit(&$form, &$form_state) {
   print_r($form_state['values']);
+   global $user;
+/*  db_insert('exam_results')
+    ->fields(array('examid', 'uid'))
+    ->values(array(
+      'examid' => $form_state['values']['exam_id'],
+      'uid'    => $user->uid,
+    ))*/
   die('miller');
 }
 
@@ -449,9 +450,14 @@ function exam_spider_exam_results() {
   $output .= theme('table', array(
     'header' => $header,
     'rows'   => $rows,
-    'empty'  => t('No Exam created yet')
+    'empty'  => t('No Exam attempt by any user.')
   ));
   $output .= theme('pager');
   return ($output);
 }
 
+function exam_spider_clock($formid) {
+  require_once(drupal_get_path('module', 'exam_spider') . '/includes/ExamSpiderDigitalClock.php');
+  $clock = new exam_spider_digital_clock();
+  return $clock->_show_clock($formid);
+}
