@@ -21,9 +21,9 @@ class exam_spider_digital_clock {
                 if (hours < 10) hours = '0' + hours;
                 if (mins < 10) mins = '0' + mins;
                 if (secs < 10) secs = '0' + secs;
-                var elem = document.getElementById('exTimer')
+                var elem = document.getElementById('exam_timer')
                 if (typeof elem !== 'undefined' && elem !== null && parseInt(hours + mins + secs) != 0) {
-                    document.getElementById('exTimer').innerHTML = hours + ':' + mins + ':' + secs;
+                    document.getElementById('exam_timer').innerHTML = hours + ':' + mins + ':' + secs;
                 }
                 if (hours == '00' && mins == '00' && secs == '00') {
                     document.getElementById('slider-next').disabled = true
@@ -36,7 +36,7 @@ class exam_spider_digital_clock {
     }
 
     private function _get_time_limit() {
-        $values = getExam(arg(1));
+        $values = exam_spider_get_exam(arg(1));
         $timer = time() + intval($values['exam_duration'] * 60);
         return date('r', $timer);
     }

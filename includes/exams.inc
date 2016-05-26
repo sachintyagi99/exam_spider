@@ -9,9 +9,9 @@
  */
 function exam_spider_dashboard() {
   $output = '';
-  $output .= l(t('+ Create Exam'), 'admin/structure/'.EXAM_SPIDER_EXAM_URL.'/add', array('html' => TRUE));
+  $output .= l(t('+ Create '.EXAM_SPIDER_EXAM_TITLE), 'admin/structure/'.EXAM_SPIDER_EXAM_URL.'/add', array('html' => TRUE));
   $header = array(
-    array('data' => EXAM_SPIDER_EXAM_TITLE.' Id', 'field' => 'id', 'sort' => 'desc'),
+    array('data' =>  EXAM_SPIDER_EXAM_TITLE.' Id', 'field' => 'id', 'sort' => 'desc'),
     array('data' =>  EXAM_SPIDER_EXAM_TITLE.' Name', 'field' => 'exam_name'),
     array('data' =>  EXAM_SPIDER_EXAM_TITLE.' Description', 'field' => 'exam_description'),
     array('data' => "Created By", 'field' => 'uid'),
@@ -45,7 +45,7 @@ function exam_spider_dashboard() {
     $user_data = user_load($row->uid);
     $rows[] = array(
       'data' => array(
-        'EXAM-' . $row->id,
+        EXAM_SPIDER_EXAM_TITLE . '-' . $row->id,
         l($row->exam_name,  EXAM_SPIDER_EXAM_URL. '/' . $row->id . '/start'),
         $row->exam_description,
         $user_data->name,
@@ -64,7 +64,7 @@ function exam_spider_dashboard() {
   return ($output);
 }
 
-function add_exam($form, &$form_state) {
+function exam_spider_add_exam($form, &$form_state) {
   $form = array();
   $form['exam_name'] = array(
     '#title'     => t(EXAM_SPIDER_EXAM_TITLE.' Name'),
@@ -125,13 +125,7 @@ function add_exam($form, &$form_state) {
   return $form;
 }
 
-function add_exam_validate($form, &$form_state) {
-  if (!is_numeric($form_state['values']['total_marks']) && intval($form_state['values']['total_marks']) > 0) {
-    form_set_error('total_marks', t('You must enter a positive integer value for total marks.'));
-  }
-  if (!is_numeric($form_state['values']['mark_per_quest'])) {
-    form_set_error('mark_per_quest', t('You must enter a positive integer value for mark per question.'));
-  }
+function exam_spider_add_exam_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['exam_duration'])) {
     form_set_error('exam_duration', t('You must enter a positive integer value for '.EXAM_SPIDER_EXAM_TITLE.' duration.'));
   }
@@ -139,7 +133,7 @@ function add_exam_validate($form, &$form_state) {
 }
 
 
-function add_exam_submit(&$form, &$form_state) {
+function exam_spider_add_exam_submit(&$form, &$form_state) {
   global $user;
   db_insert('exam_list')
     ->fields(array(
@@ -166,13 +160,13 @@ function add_exam_submit(&$form, &$form_state) {
       'changed'          => REQUEST_TIME,
     ))
     ->execute();
-  drupal_set_message(t('You have successfully created '.EXAM_SPIDER_EXAM_TITLE.', Please add Questions for this '.EXAM_SPIDER_EXAM_TITLE));
+  drupal_set_message(t('You have successfully created '.EXAM_SPIDER_EXAM_TITLE.', Please add Questions for '.$form_state['values']['exam_name'].' '.EXAM_SPIDER_EXAM_TITLE.'.'));
   drupal_goto('admin/structure/'.EXAM_SPIDER_EXAM_URL);
   return $form;
 
 }
 
-function edit_exam($form, &$form_state, $exam_id) {
+function exam_spider_edit_exam($form, &$form_state, $exam_id) {
   $values = exam_spider_get_exam($exam_id);
   $form = array();
   $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
@@ -242,19 +236,13 @@ function edit_exam($form, &$form_state, $exam_id) {
   return $form;
 }
 
-function edit_exam_validate($form, &$form_state) {
-  if (!is_numeric($form_state['values']['total_marks'])) {
-    form_set_error('total_marks', t('You must enter a integer value for total marks.'));
-  }
-  if (!is_numeric($form_state['values']['mark_per_quest'])) {
-    form_set_error('mark_per_quest', t('You must enter a integer value for mark per question.'));
-  }
+function exam_spider_edit_exam_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['exam_duration'])) {
     form_set_error('exam_duration', t('You must enter a integer value for '.EXAM_SPIDER_EXAM_TITLE.' duration.'));
   }
 }
 
-function edit_exam_submit(&$form, &$form_state) {
+function exam_spider_edit_exam_submit(&$form, &$form_state) {
   global $user;
   db_update('exam_list')
     ->fields(array(
@@ -270,14 +258,13 @@ function edit_exam_submit(&$form, &$form_state) {
     ))
     ->condition('id', $form_state['values']['exam_id'], '=')
     ->execute();
-  drupal_set_message(t('You have successfully updated '.EXAM_SPIDER_EXAM_TITLE));
+  drupal_set_message(t('You have successfully updated '.$form_state['values']['exam_name'].' '.EXAM_SPIDER_EXAM_TITLE.'.'));
   drupal_goto('admin/structure/'.EXAM_SPIDER_EXAM_URL);
   return $form;
 
 }
 
-function exam_delete_confirm($form, &$form_state, $exam_id) {
-  // Always provide entity id in the same form key as in the entity edit form.
+function exam_spider_exam_delete_confirm($form, &$form_state, $exam_id) {
   $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
   $path = 'admin/structure/'.EXAM_SPIDER_EXAM_URL;
   return confirm_form($form,
@@ -289,7 +276,7 @@ function exam_delete_confirm($form, &$form_state, $exam_id) {
   );
 }
 
-function exam_delete_confirm_submit($form, &$form_state) {
+function exam_spider_exam_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     $exam_id = $form_state['values']['exam_id'];
     db_delete('exam_list')
@@ -304,7 +291,7 @@ function exam_delete_confirm_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/structure/exam';
 }
 
-function exam_start($form, &$form_state, $exam_id) {
+function exam_spider_exam_start($form, &$form_state, $exam_id) {
   global $user;
   $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
   $form['name'] = array(
@@ -328,13 +315,13 @@ function exam_start($form, &$form_state, $exam_id) {
   return $form;
 }
 
-function exam_start_validate(&$form, &$form_state) {
+function exam_spider_exam_start_validate(&$form, &$form_state) {
   if (!valid_email_address($form_state['values']['mail'])) {
     return form_set_error('mail', t('The email address appears to be invalid.'));
   }
 }
 
-function exam_start_submit(&$form, &$form_state) {
+function exam_spider_exam_start_submit(&$form, &$form_state) {
   global $user;
   db_insert('exam_results')
     ->fields(array('examid', 'uid'))
@@ -344,26 +331,26 @@ function exam_start_submit(&$form, &$form_state) {
     ))
     ->execute();
   if (isset($form_state['values']['exam_id'])) {
-    drupal_goto('exam/' . $form_state['values']['exam_id'] . '/continue');
+    drupal_goto(EXAM_SPIDER_EXAM_URL . '/' . $form_state['values']['exam_id'] . '/continue');
   }
   else {
-    drupal_goto('exam/' . $form_state['values']['exam_id'] . '/start');
+    drupal_goto(EXAM_SPIDER_EXAM_URL .'/' . $form_state['values']['exam_id'] . '/start');
   }
 
 
 }
 
-function DigiClock($frmCls) {
+function exam_spider_clock($formid) {
   require_once(drupal_get_path('module', 'exam_spider') . '/includes/ExamSpiderDigitalClock.php');
   $clock = new exam_spider_digital_clock();
-  return $clock->_show_clock($frmCls);
+  return $clock->_show_clock($formid);
 }
 
-function exam_continue($form, &$form_state, $exam_id) {
+function exam_spider_exam_continue($form, &$form_state, $exam_id) {
   $output = '';
-  $form['#prefix'] = '<div id="exTimer"></div>';
+  $form['#prefix'] = '<div id="exam_timer"></div>';
   if (is_numeric($exam_id)) {
-    DigiClock('exam-continue');
+    exam_spider_clock('exam-continue');
   }
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/jquery.bxslider.min.js');
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
@@ -411,12 +398,12 @@ function exam_continue($form, &$form_state, $exam_id) {
   return $form;
 }
 
-function exam_continue_submit(&$form, &$form_state) {
+function exam_spider_exam_continue_submit(&$form, &$form_state) {
   print_r($form_state['values']);
   die('miller');
 }
 
-function exam_results() {
+function exam_spider_exam_results() {
   return "Coming soon!";
 }
 
