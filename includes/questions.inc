@@ -104,7 +104,7 @@ function add_question_submit(&$form, &$form_state) {
       'changed'  => REQUEST_TIME,
     ))
     ->execute();
-  drupal_set_message(t('You have successfully created question for this exam.'));
+  drupal_set_message(t('You have successfully created question for this '.EXAM_SPIDER_EXAM_TITLE));
   drupal_goto('admin/structure/question/add_question/' . $form_state['values']['selected_exam']);
   return $form;
 }
@@ -125,7 +125,7 @@ function edit_question($form, &$form_state, $question_id) {
   $form['question_id'] = array('#type' => 'value', '#value' => $question_id);
   $form['selected_exam'] = array(
     '#type'          => 'select',
-    '#title'         => 'Select Exam',
+    '#title'         => 'Select '.EXAM_SPIDER_EXAM_TITLE,
     '#options'       => $exam_options,
     '#default_value' => isset($values['examid']) ? $values['examid'] : NULL,
     '#required'      => TRUE,
@@ -210,7 +210,7 @@ function edit_question_submit(&$form, &$form_state) {
 
 function question_delete_confirm($form, &$form_state, $question_id) {
   $form['question_id'] = array('#type' => 'value', '#value' => $question_id);
-  $path = 'admin/structure/exam';
+  $path = 'admin/structure/'.EXAM_SPIDER_EXAM_URL;
   return confirm_form($form,
     t('Are you sure you want to delete %question_name ?', array('%question_name' => $question_id)),
     $path,
@@ -271,7 +271,7 @@ function getQuestions($exam_id) {
     $output .= theme('table', array(
       'header' => $header,
       'rows'   => $rows,
-      'empty'  => t('No question created yet for this exam. ') . l(t('Add Question'), 'admin/structure/question/add_question/' . $exam_id)
+      'empty'  => t('No question created yet for this '.EXAM_SPIDER_EXAM_TITLE) . l(t('Add Question'), 'admin/structure/question/add_question/' . $exam_id)
     ));
     $output .= theme('pager');
   }
