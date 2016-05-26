@@ -35,13 +35,8 @@ function exam_spider_dashboard() {
   $rows = array();
   $i = 0;
   foreach ($results as $row) {
-    if ($row->status == 0) {
-      $status = 'Closed';
-    }
-    else {
-      $status = 'Open';
-    }
-
+    if ($row->status == 0) $status = 'Closed';
+    else $status = 'Open';
     $user_data = user_load($row->uid);
     $rows[] = array(
       'data' => array(
@@ -86,6 +81,7 @@ function exam_spider_add_exam($form, &$form_state) {
   );
   $form['examsettings']['exam_duration'] = array(
     '#title'         => t(EXAM_SPIDER_EXAM_TITLE.' Duration'),
+    '#description'   => t('Time duration in minutes.'), 
     '#type'          => 'textfield',
     '#maxlength'     => '10',
     '#size'          => 10,
@@ -350,7 +346,7 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
   $output = '';
   $form['#prefix'] = '<div id="exam_timer"></div>';
   if (is_numeric($exam_id)) {
-    exam_spider_clock('exam-continue');
+    exam_spider_clock('exam-spider-exam-continue');
   }
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/jquery.bxslider.min.js');
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
@@ -359,41 +355,46 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
     ->fields("eq")
     ->condition('examid', $exam_id, '=')->orderRandom()->execute();
   $results = $query->fetchAll();
-  $form['li_prefix'] = array(
-    '#markup' => '<ul class="exam-slider">',
-  );
-  foreach ($results as $key => $value) {
-    $options[1] = $value->opt1;
-    $options[2] = $value->opt2;
-    $options[3] = $value->opt3;
-    $options[4] = $value->opt4;
-    if ($value->multiple == 1) {
-      $form['question'][$key] = array(
-        '#type'    => 'checkboxes',
-        '#options' => drupal_map_assoc($options),
-        '#title'   => t($value->question),
-      );
-    }
-    else {
-      $form['question'][$key] = array(
-        '#type'    => 'radios',
-        '#title'   => t($value->question),
-        '#options' => $options,
-        '#prefix'  => '<li>',
-        '#suffix'  => '</li>',
-      );
-    }
+  if(empty($results)){
+    $output .= t('No question created yet for this '.EXAM_SPIDER_EXAM_TITLE.'.');
   }
-  $form['next'] = array(
-    '#type'   => 'submit',
-    '#prefix' => '<li>',
-    '#suffix' => '</li>',
-    '#value'  => t('Submit')
-  );
-  $form['li_suffix'] = array(
-    '#markup' => '</ul>',
-  );
-  $output .= ' <p><span id="slider-next"></span></p>';
+  else{
+    $form['li_prefix'] = array(
+      '#markup' => '<ul class="exam-slider">',
+    );
+    foreach ($results as $key => $value) {
+      $options[1] = $value->opt1;
+      $options[2] = $value->opt2;
+      $options[3] = $value->opt3;
+      $options[4] = $value->opt4;
+      if ($value->multiple == 1) {
+        $form['question'][$key] = array(
+          '#type'    => 'checkboxes',
+          '#options' => drupal_map_assoc($options),
+          '#title'   => t($value->question),
+        );
+      }
+      else {
+        $form['question'][$key] = array(
+          '#type'    => 'radios',
+          '#title'   => t($value->question),
+          '#options' => $options,
+          '#prefix'  => '<li>',
+          '#suffix'  => '</li>',
+        );
+      }
+    }
+    $form['next'] = array(
+      '#type'   => 'submit',
+      '#prefix' => '<li>',
+      '#suffix' => '</li>',
+      '#value'  => t('Submit')
+    );
+    $form['li_suffix'] = array(
+      '#markup' => '</ul>',
+    );
+    $output .= ' <p><span id="slider-next"></span></p>';
+  }
   $form['#suffix'] = $output;
   return $form;
 }
@@ -404,6 +405,53 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
 }
 
 function exam_spider_exam_results() {
-  return "Coming soon!";
+  $output = '';
+  $header = array(
+    array('data' =>  'REG Id', 'field' => 'id', 'sort' => 'desc'),
+    array('data' =>  'Exam Name', 'field' => 'examid'),
+    array('data' =>  'Name', 'field' => 'uid'),
+    array('data' =>  'Total Marks', 'field' => 'total'),
+    array('data' => 'Obtain Marks', 'field' => 'obtain'),
+    array('data' => 'Wrong', 'field' => 'wrong'),
+
+  );
+  $query = db_select("exam_results", "er")
+    ->extend('PagerDefault')
+    ->limit(10)
+    ->extend('TableSort')
+    ->orderByHeader($header)
+    ->fields("er", array(
+      'id',
+      'examid',
+      'uid',
+      'total',
+      'obtain',
+      'wrong'
+    ));
+  $results = $query->execute();
+  $rows = array();
+  $i = 0;
+  foreach ($results as $row) {
+    $user_data = user_load($row->uid);
+    $exam_data = exam_spider_get_exam( $row->examid);
+    $rows[] = array(
+      'data' => array(
+        t('REG -') . $row->id,
+        $exam_data['exam_name'],
+        $user_data->name,
+        $row->total,
+        $row->obtain,
+        $row->wrong,
+      )
+    );
+    $i++;
+  }
+  $output .= theme('table', array(
+    'header' => $header,
+    'rows'   => $rows,
+    'empty'  => t('No Exam created yet')
+  ));
+  $output .= theme('pager');
+  return ($output);
 }
 

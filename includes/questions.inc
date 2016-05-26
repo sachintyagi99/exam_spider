@@ -246,6 +246,7 @@ function exam_spider_get_questions($exam_id) {
       ->extend('TableSort')
       ->orderByHeader($header)
       ->fields("eq", array('id', 'question', 'status'))
+      ->orderBy('id', 'DESC')
       ->condition('examid', $exam_id, '=');
     $results = $query->execute();
     $rows = array();
