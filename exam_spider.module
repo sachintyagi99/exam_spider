@@ -12,7 +12,7 @@ function exam_spider_permission() {
   return array(
     'exam spider dashboard' => array(
       'title'       => t("Use exam spider Dashboard"),
-      'description' => t('Allows a user to access the <a href="@url">exam spider Dashboard</a>.', array('@url' => url('admin/structure/'.EXAM_SPIDER_EXAM_URL))),
+      'description' => t('Allows a user to access the <a href="@url">Exam Spider Dashboard</a>.', array('@url' => url('admin/structure/'.EXAM_SPIDER_EXAM_URL))),
     ),
   );
 }
@@ -65,7 +65,7 @@ function exam_spider_menu() {
       'type'           => MENU_CALLBACK,
     ) + $exam_base;
   $items[EXAM_SPIDER_EXAM_URL.'/%/continue'] = array(
-      'title'          => 'Start '.EXAM_SPIDER_EXAM_TITLE,
+      'title'          => 'Continue '.EXAM_SPIDER_EXAM_TITLE,
       'page callback'  => 'drupal_get_form',
       'page arguments' => array('exam_spider_exam_continue', 1),
       'type'           => MENU_CALLBACK,
