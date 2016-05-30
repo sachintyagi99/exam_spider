@@ -512,3 +512,4 @@ function exam_spider_clock($formid) {
   $clock = new exam_spider_digital_clock();
   return $clock->_show_clock($formid);
 }
+
