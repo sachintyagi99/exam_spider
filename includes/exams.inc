@@ -326,6 +326,9 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
   $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
   $output = '';
   $form['#prefix'] = '<div id="exam_timer"></div>';
+  drupal_add_css(drupal_get_path('module', 'exam_spider') . '/css/exam_spider.css');
+  /*drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/jquery.bxslider.min.js');*/
+  drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
   $exam_data = exam_spider_get_exam($exam_id);
   //print_r($exam_data['random_quest']);
   if ($exam_data['status'] == 0) {
@@ -334,20 +337,26 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
   if ($exam_data['exam_duration'] > 0) {
     exam_spider_clock('exam-spider-exam-continue');
   }
-  drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/jquery.bxslider.min.js');
-  drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
 
-  $query = db_select("exam_questions", "eq")
+if($exam_data['random_quest'] == 1){
+    $query = db_select("exam_questions", "eq")
     ->fields("eq")
     ->condition('examid', $exam_id, '=')->orderRandom()->execute();
-  $results = $query->fetchAll();
+ 
+}else{
+    $query = db_select("exam_questions", "eq")
+    ->fields("eq")
+    ->condition('examid', $exam_id, '=')->execute();
+}
+ $results = $query->fetchAll();
   if (empty($results)) {
     $output .= t('No question created yet for this ' . EXAM_SPIDER_EXAM_TITLE . '.');
   }
   else {
-    // $form['li_prefix'] = array(
-    //   '#markup' => '<ul class="exam-slider">',
-    // );
+    $form['li_prefix'] = array(
+      '#markup' => ' <ul class="exam_spider_slider_exam">',
+    );
+    $total_slides = count($results);
     foreach ($results as $key => $value) {
       $options[1] = $value->opt1;
       $options[2] = $value->opt2;
@@ -358,6 +367,8 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
           '#type'    => 'checkboxes',
           '#options' => $options,
           '#title'   => t($value->question),
+          '#prefix'  => '<li id="examslide_'.$key.'" class="exam_spider_slider">',
+          '#suffix'  => ' <a class="exam_spider_slide_next" href="javascript:void(0);">Next</a></li>',
         );
       }
       else {
@@ -365,23 +376,22 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
           '#type'    => 'radios',
           '#title'   => t($value->question),
           '#options' => $options,
-          '#prefix'  => '<li>',
-          '#suffix'  => '</li>',
+          '#prefix'  => '<li id="examslide_'.$key.'" class="exam_spider_slider">',
+          '#suffix'  => ' <a class="exam_spider_slide_next" href="javascript:void(0);">Next</a></li>',
         );
       }
     }
-    $form['next']['#prefix'] = t('I am done.');
     $form['next'] = array(
       '#type'   => 'submit',
-      '#prefix' => '<li>',
+      '#prefix' => '<li id="examslide_'.$total_slides.'" class="exam_spider_slider">'.t('<h2>I am done.</h2><br />'),
       '#suffix' => '</li>',
       '#value'  => t('Submit')
     );
     $form['#tree'] = TRUE;
-    /* $form['li_suffix'] = array(
+    $form['li_suffix'] = array(
        '#markup' => '</ul>',
-     );*/
-    $output .= ' <p><span id="slider-next"></span></p>';
+     );
+    //$output .= ' <p><span id="slider-next"></span></p>';
   }
   $form['#suffix'] = $output;
   return $form;
