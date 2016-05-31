@@ -14,6 +14,10 @@ function exam_spider_permission() {
       'title'       => t("Use exam spider Dashboard"),
       'description' => t('Allows a user to access the <a href="@url">Exam Spider Dashboard</a>.', array('@url' => url('admin/structure/'.EXAM_SPIDER_EXAM_URL))),
     ),
+    'exam spider user' => array(
+      'title'       => t("Use exam spider user"),
+      'description' => t('Allows a user to access the exam start.'),
+    ),
   );
 }
 
@@ -21,6 +25,10 @@ function exam_spider_permission() {
  * Implements hook_menu().
  */
 function exam_spider_menu() {
+  $exam_base_user = array(
+    'file'             => 'includes/exams.inc',
+    'access arguments' => array('exam spider user'),
+  );
   $exam_base = array(
     'file'             => 'includes/exams.inc',
     'access arguments' => array('exam spider dashboard'),
@@ -58,18 +66,17 @@ function exam_spider_menu() {
       'page arguments' => array('exam_spider_exam_delete_confirm', 3),
       'type'           => MENU_CALLBACK,
     ) + $exam_base;
-  $items[EXAM_SPIDER_EXAM_URL.'/%/start'] = array(
+  $items[EXAM_SPIDER_EXAM_URL.'/start'] = array(
       'title'          => 'Start '.EXAM_SPIDER_EXAM_TITLE,
-      'page callback'  => 'drupal_get_form',
-      'page arguments' => array('exam_spider_exam_start', 1),
+      'page callback'  => 'exam_spider_exam_start',
       'type'           => MENU_CALLBACK,
-    ) + $exam_base;
+    ) + $exam_base_user;
   $items[EXAM_SPIDER_EXAM_URL.'/%/continue'] = array(
       'title'          => 'Continue '.EXAM_SPIDER_EXAM_TITLE,
       'page callback'  => 'drupal_get_form',
       'page arguments' => array('exam_spider_exam_continue', 1),
       'type'           => MENU_CALLBACK,
-    ) + $exam_base;
+    ) + $exam_base_user;
   $items['admin/structure/'.EXAM_SPIDER_EXAM_URL.'/results'] = array(
       'title'         => EXAM_SPIDER_EXAM_TITLE.' Results',
       'page callback' => 'exam_spider_exam_results',
@@ -114,8 +121,7 @@ function exam_spider_get_exam($exam_id = '') {
   if (is_numeric($exam_id)) {
     $query = db_select("exam_list", "el")
       ->fields("el")
-      ->condition('id', $exam_id, '=')
-      ->condition('uid', $user->uid, '=');
+      ->condition('id', $exam_id, '=');
     $query = $query->execute();
     return $query->fetchAssoc();
 

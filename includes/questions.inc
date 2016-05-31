@@ -8,6 +8,7 @@ function exam_spider_add_question($form, &$form_state, $default_sel) {
   drupal_add_css(drupal_get_path('module', 'exam_spider') . '/css/exam_spider.css');
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
   $form = $exam_options = array();
+  $form['#prefix'] = l(t('Back to '.EXAM_SPIDER_EXAM_TITLE.' Dashboard'),'admin/structure/'.EXAM_SPIDER_EXAM_URL);
   $allExam = exam_spider_get_exam();
   foreach ($allExam as $option) {
     $exam_options[$option->id] = $option->exam_name;
