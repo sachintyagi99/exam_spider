@@ -1,16 +1,21 @@
 <?php
+
 /**
- * @file callbacks.inc
- * Minor menu callbacks for exam spider helpers.
+ * @file
+ * Administrative page callbacks for the questions of Exam Spider module.
  */
 
+/**
+ * Add question page callbacks.
+ */
 function exam_spider_add_question($form, &$form_state, $default_sel) {
   drupal_add_css(drupal_get_path('module', 'exam_spider') . '/css/exam_spider.css');
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
   $form = $exam_options = array();
-  $form['#prefix'] = l(t('Back to ' . EXAM_SPIDER_EXAM_TITLE . ' Dashboard'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL);
-  $allExam = exam_spider_get_exam();
-  foreach ($allExam as $option) {
+  $form['#prefix'] = l(t('Back to @examSpiderExamTitle Dashboard', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)), 'admin/structure/' . EXAM_SPIDER_EXAM_URL);
+
+  $all_exam = exam_spider_get_exam();
+  foreach ($all_exam as $option) {
     $exam_options[$option->id] = $option->exam_name;
   }
   $form['#attributes'] = array('class' => array('questions-action'));
@@ -40,7 +45,7 @@ function exam_spider_add_question($form, &$form_state, $default_sel) {
   );
   for ($i = 1; $i <= 4; $i++) {
     $form['options']['opt' . $i] = array(
-      '#title'     => t('Option ') . $i,
+      '#title'     => t('Option @i', array('@i' => $i)),
       '#type'      => 'textarea',
       '#maxlength' => '550',
       '#cols'      => 20,
@@ -65,12 +70,18 @@ function exam_spider_add_question($form, &$form_state, $default_sel) {
   return $form;
 }
 
+/**
+ * Add question validate page callbacks.
+ */
 function exam_spider_add_question_validate(&$form, &$form_state) {
   if ($form_state['values']['answer1'] == 0 && $form_state['values']['answer2'] == 0 && $form_state['values']['answer3'] == 0 && $form_state['values']['answer4'] == 0) {
     return form_set_error('time', t('Please tic correct answer.'));
   }
 }
 
+/**
+ * Add question submit page callbacks.
+ */
 function exam_spider_add_question_submit(&$form, &$form_state) {
   $answer = '';
   for ($i = 1; $i <= 4; $i++) {
@@ -90,7 +101,7 @@ function exam_spider_add_question_submit(&$form, &$form_state) {
       'answer',
       'multiple',
       'created',
-      'changed'
+      'changed',
     ))
     ->values(array(
       'examid'   => $form_state['values']['selected_exam'],
@@ -105,17 +116,20 @@ function exam_spider_add_question_submit(&$form, &$form_state) {
       'changed'  => REQUEST_TIME,
     ))
     ->execute();
-  drupal_set_message(t('You have successfully created question for this ' . EXAM_SPIDER_EXAM_TITLE));
+  drupal_set_message(t('You have successfully created question for this @examSpiderExamTitle', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)));
   drupal_goto('admin/structure/question/add_question/' . $form_state['values']['selected_exam']);
   return $form;
 }
 
+/**
+ * Edit question page callbacks.
+ */
 function exam_spider_edit_question($form, &$form_state, $question_id) {
   drupal_add_css(drupal_get_path('module', 'exam_spider') . '/css/exam_spider.css');
   drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
   $form = $exam_options = array();
-  $allExam = exam_spider_get_exam();
-  foreach ($allExam as $option) {
+  $all_exam = exam_spider_get_exam();
+  foreach ($all_exam as $option) {
     $exam_options[$option->id] = $option->exam_name;
   }
 
@@ -151,8 +165,9 @@ function exam_spider_edit_question($form, &$form_state, $question_id) {
     '#default_value' => isset($values['multiple']) ? $values['multiple'] : NULL,
   );
   for ($i = 1; $i <= 4; $i++) {
+
     $form['options']['opt' . $i] = array(
-      '#title'         => t('Option ') . $i,
+      '#title'         => t('Option @i', array('@i' => $i)),
       '#type'          => 'textarea',
       '#maxlength'     => '550',
       '#cols'          => 20,
@@ -177,12 +192,18 @@ function exam_spider_edit_question($form, &$form_state, $question_id) {
   return $form;
 }
 
+/**
+ * Edit question validate page callbacks.
+ */
 function exam_spider_edit_question_validate(&$form, &$form_state) {
   if ($form_state['values']['answer1'] == 0 && $form_state['values']['answer2'] == 0 && $form_state['values']['answer3'] == 0 && $form_state['values']['answer4'] == 0) {
     return form_set_error('time', t('Please tic correct answer.'));
   }
 }
 
+/**
+ * Edit question submit page callbacks.
+ */
 function exam_spider_edit_question_submit(&$form, &$form_state) {
   $answer = '';
   for ($i = 1; $i <= 4; $i++) {
@@ -209,6 +230,9 @@ function exam_spider_edit_question_submit(&$form, &$form_state) {
   return $form;
 }
 
+/**
+ * Question delete confirm page callbacks.
+ */
 function exam_spider_question_delete_confirm($form, &$form_state, $question_id) {
   $form['question_id'] = array('#type' => 'value', '#value' => $question_id);
   $path = 'admin/structure/' . EXAM_SPIDER_EXAM_URL;
@@ -221,6 +245,9 @@ function exam_spider_question_delete_confirm($form, &$form_state, $question_id) 
   );
 }
 
+/**
+ * Question delete confirm submit page callbacks.
+ */
 function exam_spider_question_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     $question_id = $form_state['values']['question_id'];
@@ -232,6 +259,9 @@ function exam_spider_question_delete_confirm_submit($form, &$form_state) {
   }
 }
 
+/**
+ * Get Question list using exam id function.
+ */
 function exam_spider_get_questions($exam_id) {
   $output = '';
   if (is_numeric($exam_id)) {
@@ -264,16 +294,16 @@ function exam_spider_get_questions($exam_id) {
         'data' => array(
           $row->question,
           $status,
-          l('Edit', 'admin/structure/question/' . $row->id . '/edit', array('query' => array($destination))) . ' | ' . l('Delete', 'admin/structure/question/' . $row->id . '/delete', array('query' => array($destination))),
-        )
+          l(t('Edit'), 'admin/structure/question/' . $row->id . '/edit', array('query' => array($destination))) . ' | ' . l(t('Delete'), 'admin/structure/question/' . $row->id . '/delete', array('query' => array($destination))),
+        ),
       );
       $i++;
     }
     $output .= theme('table', array(
       'header' => $header,
       'rows'   => $rows,
-      'empty'  => t('No question created yet for this ' . EXAM_SPIDER_EXAM_TITLE . ' ') . l(t('+Add Question'), 'admin/structure/question/add_question/' . $exam_id)
-    ));
+      'empty'  => t('No question created yet for this @examSpiderExamTitle', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)) . l(t('+Add Question'), 'admin/structure/question/add_question/' . $exam_id),
+    ),);
     $output .= theme('pager');
   }
   return $output;
