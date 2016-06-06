@@ -8,8 +8,8 @@
 /**
  * Define Exam variable for Exam title and Path.
  */
-define('EXAM_SPIDER_EXAM_URL', 'quizspider');
-define('EXAM_SPIDER_EXAM_TITLE', 'Quiz');
+define('EXAM_SPIDER_EXAM_URL', 'examspider');
+define('EXAM_SPIDER_EXAM_TITLE', 'Exam');
 
 /**
  * Hook_perm() for Exam Spider permissions.
@@ -89,6 +89,12 @@ function exam_spider_menu() {
     'type'          => MENU_LOCAL_TASK,
     'weight'        => 3,
   ) + $exam_base;
+  $items['admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/%/delete'] = array(
+    'title'          => 'Delete Result',
+    'page callback'  => 'drupal_get_form',
+    'page arguments' => array('exam_spider_exam_result_delete_confirm', 4),
+    'type'           => MENU_CALLBACK,
+  ) + $exam_base;
   $items['admin/structure/question/add/%'] = array(
     'title'          => 'Add Question',
     'page callback'  => 'drupal_get_form',
@@ -153,7 +159,7 @@ function exam_spider_get_question($question_id = '') {
 /**
  * Get any user last result for any exam.
  */
-function any_exam_last_result($exam_id = '') {
+function exam_spider_any_exam_last_result($exam_id = '') {
   global $user;
   if (is_numeric($exam_id)) {
     $query = db_select("exam_results", "er")

@@ -162,9 +162,6 @@ function exam_spider_add_exam_validate($form, &$form_state) {
   if (!is_numeric($form_state['values']['re_attempt'])) {
     form_set_error('re_attempt', t('You must enter a positive integer value for Re-attempt @examSpiderExamTitle time.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)));
   }
-  
-  
-
 }
 
 /**
@@ -240,6 +237,7 @@ function exam_spider_edit_exam($form, &$form_state, $exam_id) {
   );
   $form['examsettings']['exam_duration'] = array(
     '#title'         => t('@examSpiderExamTitle Duration', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)),
+    '#description'   => t('@examSpiderExamTitle time duration in minutes.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)),
     '#type'          => 'textfield',
     '#maxlength'     => '10',
     '#size'          => 10,
@@ -315,17 +313,17 @@ function exam_spider_edit_exam_submit(&$form, &$form_state) {
   global $user;
   db_update('exam_list')
     ->fields(array(
-      'exam_name'        => $form_state['values']['exam_name'],
-      'exam_description' => $form_state['values']['exam_description'],
-      'uid'              => $user->uid,
-      'exam_duration'    => $form_state['values']['exam_duration'],
-      'total_marks'      => $form_state['values']['total_marks'],
-      'random_quest'     => $form_state['values']['random_quest'],
-      'negative_mark'    => $form_state['values']['negative_mark'],
-      'negative_mark_per'=> $form_state['values']['negative_mark_per'],
-      're_attempt'       => $form_state['values']['re_attempt'],
-      'status'           => $form_state['values']['status'],
-      'changed'          => REQUEST_TIME,
+      'exam_name'         => $form_state['values']['exam_name'],
+      'exam_description'  => $form_state['values']['exam_description'],
+      'uid'               => $user->uid,
+      'exam_duration'     => $form_state['values']['exam_duration'],
+      'total_marks'       => $form_state['values']['total_marks'],
+      'random_quest'      => $form_state['values']['random_quest'],
+      'negative_mark'     => $form_state['values']['negative_mark'],
+      'negative_mark_per' => $form_state['values']['negative_mark_per'],
+      're_attempt'        => $form_state['values']['re_attempt'],
+      'status'            => $form_state['values']['status'],
+      'changed'           => REQUEST_TIME,
     ))
     ->condition('id', $form_state['values']['exam_id'], '=')
     ->execute();
@@ -423,6 +421,18 @@ function exam_spider_exam_start() {
  * Exam continue page callbacks.
  */
 function exam_spider_exam_continue($form, &$form_state, $exam_id) {
+  $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
+  $exam_data = exam_spider_get_exam($exam_id);
+  $re_attempt = $exam_data['re_attempt'];
+  $user_last_result = exam_spider_any_exam_last_result($exam_id);
+  $user_last_attempt_timestamp = $user_last_result['created'];
+  $re_attempt_timestamp = strtotime('+' . $re_attempt . ' day', $user_last_attempt_timestamp);
+  if ($re_attempt_timestamp > REQUEST_TIME) {
+    $form_state['storage']['re_exam_warning'] = t('You have already attempt this @examSpiderExamTitle, You will be eligible again after @re_attempt days from previus @examSpiderExamTitle attempt day.', array(
+      '@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE,
+      '@re_attempt' => $re_attempt,
+    ));
+  }
   if (isset($form_state['storage']['exam_result'])) {
     drupal_set_title(t('@examSpiderExamTitle Score', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)));
     $form['exam_result_score'] = array(
@@ -436,12 +446,10 @@ function exam_spider_exam_continue($form, &$form_state, $exam_id) {
     );
   }
   else {
-    $form['exam_id'] = array('#type' => 'value', '#value' => $exam_id);
     $output = '';
     $form['#prefix'] = '<div id="exam_timer"></div>';
     drupal_add_css(drupal_get_path('module', 'exam_spider') . '/css/exam_spider.css');
     drupal_add_js(drupal_get_path('module', 'exam_spider') . '/js/exam_spider.js');
-    $exam_data = exam_spider_get_exam($exam_id);
     if ($exam_data['status'] == 0) {
       return drupal_access_denied();
     }
@@ -522,15 +530,17 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
   $negative_mark_per = $exam_data['negative_mark_per'];
   $total_quest = count($form_state['values']['question']);
   $mark_per_quest = ($total_marks / $total_quest);
-  $re_attempt =  $exam_data['re_attempt'];
-  $user_last_result = any_exam_last_result($form_state['values']['exam_id']);
+  $re_attempt = $exam_data['re_attempt'];
+  $user_last_result = exam_spider_any_exam_last_result($form_state['values']['exam_id']);
   $user_last_attempt_timestamp = $user_last_result['created'];
-  $re_attempt_timestamp =  strtotime('+'.$re_attempt.' day',  $user_last_attempt_timestamp);
-  if($re_attempt_timestamp > REQUEST_TIME){
-    $form_state['storage']['re_exam_warning'] = t('You have already attempt this @examSpiderExamTitle, You will be eligible again after @re_attempt days from previus @examSpiderExamTitle attempt day.',  array(
-    '@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE, '@re_attempt' => $re_attempt));
+  $re_attempt_timestamp = strtotime('+' . $re_attempt . ' day', $user_last_attempt_timestamp);
+  if ($re_attempt_timestamp > REQUEST_TIME) {
+    $form_state['storage']['re_exam_warning'] = t('You have already attempt this @examSpiderExamTitle, You will be eligible again after @re_attempt days from previus @examSpiderExamTitle attempt day.', array(
+      '@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE,
+      '@re_attempt' => $re_attempt,
+    ));
   }
-  else{
+  else {
     $negative_marking_number = (($mark_per_quest * $negative_mark_per) / 100);
     foreach ($form_state['values']['question'] as $key => $answervalues) {
       $question_data = exam_spider_get_question($key);
@@ -546,7 +556,7 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
           $score_obtain += $mark_per_quest;
         }
         else {
-          if($negative_mark == 1) {
+          if ($negative_mark == 1) {
             $score_obtain -= $negative_marking_number;
           }
           $wrong_quest += 1;
@@ -558,7 +568,7 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
           $score_obtain += $mark_per_quest;
         }
         else {
-          if($negative_mark == 1) {
+          if ($negative_mark == 1) {
             $score_obtain -= $negative_marking_number;
           }
           $wrong_quest += 1;
@@ -583,7 +593,7 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
         'created' => REQUEST_TIME,
       ))
       ->execute();
-    drupal_set_message(t('Your @examSpiderExamTitle has submitted successfully and your REG id is REG-@reg_id.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE, '@reg_id' => $reg_id))); 
+    drupal_set_message(t('Your @examSpiderExamTitle has submitted successfully and your REG id is REG-@reg_id.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE, '@reg_id' => $reg_id)));
   }
   $form_state['rebuild'] = TRUE;
 }
@@ -601,6 +611,7 @@ function exam_spider_exam_results() {
     array('data' => 'Obtain Marks', 'field' => 'obtain'),
     array('data' => 'Wrong', 'field' => 'wrong'),
     array('data' => 'Date', 'field' => 'created'),
+    array('data' => "Operations"),
   );
   $query = db_select("exam_results", "er")
     ->extend('PagerDefault')
@@ -622,6 +633,7 @@ function exam_spider_exam_results() {
   foreach ($results as $row) {
     $user_data = user_load($row->uid);
     $exam_data = exam_spider_get_exam($row->examid);
+    $destination = drupal_get_destination();
     $rows[] = array(
       'data' => array(
         t('REG -') . $row->id,
@@ -631,6 +643,7 @@ function exam_spider_exam_results() {
         $row->obtain,
         $row->wrong,
         format_date($row->created, 'short'),
+        l(t('Delete'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->id . '/delete', array('query' => array($destination))),
       ),
     );
     $i++;
@@ -651,4 +664,32 @@ function exam_spider_clock($formid) {
   require_once drupal_get_path('module', 'exam_spider') . '/includes/ExamSpiderDigitalClock.php';
   $clock = new ExamSpiderDigitalClock();
   return $clock->showClock($formid);
+}
+
+/**
+ * Delete exam result confirm page callbacks.
+ */
+function exam_spider_exam_result_delete_confirm($form, &$form_state, $result_id) {
+  $form['result_id'] = array('#type' => 'value', '#value' => $result_id);
+  $path = 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/results';
+  return confirm_form($form,
+    t('Are you sure you want to delete REG - @exam_name  result ?', array('@exam_name' => $result_id)),
+    $path,
+    t('This action cannot be undone.'),
+    t('Delete'),
+    t('Cancel')
+  );
+}
+
+/**
+ * Delete exam confirm submit page callbacks.
+ */
+function exam_spider_exam_result_delete_confirm_submit($form, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    $result_id = $form_state['values']['result_id'];
+    db_delete('exam_results')
+      ->condition('id', $result_id, '=')
+      ->execute();
+    drupal_set_message(t('REG - @exam_name result has been deleted successfully.', array('@exam_name' => $result_id)));
+  }
 }
