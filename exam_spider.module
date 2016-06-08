@@ -97,9 +97,9 @@ function exam_spider_menu() {
     'type'           => MENU_CALLBACK,
   ) + $exam_base;
   $items['admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/%/%/mail'] = array(
-    'title'          => 'Delete Result',
-    'page callback'  => 'drupal_get_form',
-    'page arguments' => array('exam_spider_exam_result_mail', 4, 5),
+    'title'          => 'Send Score Card of Result',
+    'page callback'  => 'exam_spider_exam_result_mail',
+    'page arguments' => array(4, 5),
     'type'           => MENU_CALLBACK,
   ) + $exam_base;
   $items['admin/structure/question/add/%'] = array(
