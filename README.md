@@ -5,7 +5,7 @@ Display Random Question,Exam Published or unpublished. Easily set re attempt
 time in days, User can reattempt exam after that time period.
 
 
-#Exam Spider Functionality
+###Exam Spider Functionality
  * Display Exam clock set time period in minutes.
  * Set exam total marks.
  * Display random questions for a specific exam.
