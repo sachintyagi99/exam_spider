@@ -601,8 +601,31 @@ function exam_spider_exam_continue_submit(&$form, &$form_state) {
 /**
  * Exam results page callbacks.
  */
-function exam_spider_exam_results() {
+function exam_spider_exam_results($form, &$form_state) {
   $output = '';
+  $exam_names = array();
+  $exams_data = exam_spider_get_exam();
+  foreach ($exams_data as $exam_name) {
+    $exam_names[$exam_name->id] = $exam_name->exam_name;
+  }
+  $form['filter'] = array(
+    '#type'        => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#title'       => t('Filter option'),
+  );
+
+  $form['filter']['filter_exam_name'] = array(
+    '#type'          => 'select',
+    '#options'       => $exam_names,
+    '#default_value' => isset($form_state['storage']['filter']['examid']) ? $form_state['storage']['filter']['examid'] : NULL,
+  );
+
+  $form['filter']['submit'] = array(
+  '#type'  => 'submit',
+  '#value' => t('Filter'),
+  );
+
   $header = array(
     array('data' => 'REG Id', 'field' => 'id', 'sort' => 'desc'),
     array('data' => EXAM_SPIDER_EXAM_TITLE . ' Name', 'field' => 'examid'),
@@ -627,6 +650,9 @@ function exam_spider_exam_results() {
       'wrong',
       'created',
     ));
+  if (isset($form_state['storage']['filter']['examid'])) {
+    $query->condition('examid', $form_state['storage']['filter']['examid']);
+  }
   $results = $query->execute();
   $rows = array();
   $i = 0;
@@ -643,18 +669,27 @@ function exam_spider_exam_results() {
         $row->obtain,
         $row->wrong,
         format_date($row->created, 'short'),
-        l(t('Delete'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->id . '/delete', array('query' => array($destination))),
+        l(t('Delete'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->id . '/delete', array('query' => array($destination))) . '|' . l(t('Mail Result'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->examid . '/' . $row->uid. '/mail', array('query' => array($destination))),
       ),
     );
     $i++;
   }
-  $output .= theme('table', array(
-    'header' => $header,
-    'rows'   => $rows,
-    'empty'  => t('No @examSpiderExamTitle attempt by any user.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)),
-  ));
-  $output .= theme('pager');
-  return ($output);
+  $form['table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('No @examSpiderExamTitle attempt by any user.', array('@examSpiderExamTitle' => EXAM_SPIDER_EXAM_TITLE)),
+  );    
+  $form['pager'] = array('#markup' => theme('pager'));
+  $form['results_table'] = array(
+    '#markup' => $output,
+  );
+  return $form;
+}
+
+function exam_spider_exam_results_submit($form, &$form_state) {
+  $form_state['storage']['filter']['examid'] = $form_state['values']['filter_exam_name'];
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
@@ -692,4 +727,46 @@ function exam_spider_exam_result_delete_confirm_submit($form, &$form_state) {
       ->execute();
     drupal_set_message(t('REG - @exam_name result has been deleted successfully.', array('@exam_name' => $result_id)));
   }
+}
+/**
+ * Hook_mail() for Exam Spider Result Mail.
+ */
+function exam_spider_mail($key,&$message,$params) {
+  switch ($key) {
+    case 'exam_spider_result':
+      $message['subject']=t($params['subject']);
+      $message['body'][]=$params['body'];
+      $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+    break;
+  }
+ }
+
+/**
+ * Send result score card via mail.
+ */
+function exam_spider_exam_result_mail($to_uid, $exam_id) {
+  $exam_result_data = exam_spider_any_exam_last_result($exam_id, $to_uid);
+  $user_data = user_load($to_uid);
+  $exam_data = exam_spider_get_exam($exam_id);
+  $total_quest = 10;
+  $correct_answers = $total_quest - $exam_result_data['wrong'];
+  $message = t('<b>You have got @score_obtain marks out of @total_marks<br/>Correct Answer(s) @correctAnswers <br/>Wrong Answer(s) @wrong_quest<b>', array(
+    '@score_obtain'   => $exam_result_data['obtain'],
+    '@total_marks'    => $exam_result_data['total'],
+    '@correctAnswers' => $correct_answers,
+    '@wrong_quest'    => $exam_result_data['wrong'],
+  ));
+
+  $module = 'exam_spider';
+  $key = 'exam_spider_result';
+  $from = variable_get('site_mail', 'admin@example.com');
+  $to = $user_data->mail;
+
+  $message = 'New signup email address'; // Body of your email here.
+  $params = array(
+    'body'    => $message,
+    'subject' => 'Eaxam Result for ' . $exam_data['exam_name'],
+    'headers' => 'simple',
+  );
+  drupal_mail($module, $key, $to, language_default(), $params, $from, TRUE);
 }
