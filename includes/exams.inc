@@ -669,7 +669,7 @@ function exam_spider_exam_results($form, &$form_state) {
         $row->obtain,
         $row->wrong,
         format_date($row->created, 'short'),
-        l(t('Delete'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->id . '/delete', array('query' => array($destination))) . '|' . l(t('Mail Result'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->examid . '/' . $row->uid. '/mail', array('query' => array($destination))),
+        l(t('Delete'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->id . '/delete', array('query' => array($destination))) . '|' . l(t('Send Mail'), 'admin/structure/' . EXAM_SPIDER_EXAM_URL . '/result/' . $row->examid . '/' . $row->uid . '/mail'),
       ),
     );
     $i++;
@@ -731,7 +731,7 @@ function exam_spider_exam_result_delete_confirm_submit($form, &$form_state) {
 /**
  * Hook_mail() for Exam Spider Result Mail.
  */
-function exam_spider_mail($key,&$message,$params) {
+function exam_spider_mail($key, &$message, $params) {
   switch ($key) {
     case 'exam_spider_result':
       $message['subject'] = t($params['subject']);
@@ -747,22 +747,17 @@ function exam_spider_mail($key,&$message,$params) {
 function exam_spider_exam_result_mail($exam_id, $to_uid) {
   $exam_result_data = exam_spider_any_exam_last_result($exam_id, $to_uid);
   $user_data = user_load($to_uid);
-  $exam_data = exam_spider_get_exam($exam_id);
-  $total_quest = 10;
-  $correct_answers = $total_quest - $exam_result_data['wrong'];
- /* $message = t('<b>You have got @score_obtain marks out of @total_marks<br/>Correct Answer(s) @correctAnswers <br/>Wrong Answer(s) @wrong_quest<b>', array(
+
+  $message = t('<b>You have got @score_obtain marks out of @total_marks<br/>Wrong Answer(s) @wrong_quest<b>', array(
     '@score_obtain'   => $exam_result_data['obtain'],
     '@total_marks'    => $exam_result_data['total'],
-    '@correctAnswers' => $correct_answers,
     '@wrong_quest'    => $exam_result_data['wrong'],
-  ));*/
+  ));
 
   $module = 'exam_spider';
   $key = 'exam_spider_result';
   $from = variable_get('site_mail', 'admin@example.com');
   $to = $user_data->mail;
-
-  $message = 'New signup email address'; // Body of your email here.
   $params = array(
     'body'    => $message,
     'subject' => 'Eaxam Result for ' . $exam_data['exam_name'],
@@ -770,9 +765,10 @@ function exam_spider_exam_result_mail($exam_id, $to_uid) {
   );
   $result = drupal_mail($module, $key, $to, language_default(), $params, $from, TRUE);
   if ($result['result'] == TRUE) {
-    drupal_set_message(t('Your message has been sent.'));
+     drupal_set_message(t('Your message has been sent.'));
   }
   else {
-    drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
+     drupal_set_message(t('There was a problem sending your message and it was not sent.'), 'error');
   }
+  drupal_goto('admin/structure/' . EXAM_SPIDER_EXAM_URL . '/results');
 }

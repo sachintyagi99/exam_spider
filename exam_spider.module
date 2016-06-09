@@ -166,7 +166,7 @@ function exam_spider_get_question($question_id = '') {
  * Get any user last result for any exam.
  */
 function exam_spider_any_exam_last_result($exam_id = '', $uid = '') {
-  if($uid == ''){
+  if ($uid == '') {
     global $user;
     $uid = $user->uid;
   }
