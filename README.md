@@ -14,3 +14,7 @@ time in days, User can reattempt exam after that time period.
  * User can retake exam after a specific timer period(days).
  * Single and multiple answer available.
  * Exam results dashboard.
+
+ ### Exams list user page
+ *Any user call access all exam list to start exam.
+examspider/start
