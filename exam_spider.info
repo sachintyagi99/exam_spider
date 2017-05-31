@@ -2,7 +2,7 @@ name = Exam Spider
 description = Provides Exam with single and multiple options with time clock as well as provide negative marking.
 core = 7.x
 package = Other
-; Information added by Drupal.org packaging script on 2016-04-26
+configure = admin/structure/examspider
 
 ; Information added by Drupal.org packaging script on 2017-03-20
 version = "7.x-1.0"
